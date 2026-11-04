@@ -1,16 +1,11 @@
-import { createNote, deleteNote, fetchNotes } from "../../services/noteService";
-import NoteList from "../NoteList/NoteList";
 import { useState } from "react";
+import { fetchNotes } from "../../services/noteService";
+import NoteList from "../NoteList/NoteList";
 import Pagination from "../Pagination/Pagination";
 import SearchBox from "../SearchBox/SearchBox";
 import { useDebouncedCallback } from "use-debounce";
 import css from "./App.module.css";
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Modal from "../Modal/Modal";
 import NoteForm from "../NoteForm/NoteForm";
 
@@ -18,28 +13,6 @@ export default function App() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const queryClient = useQueryClient();
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteNote,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-    },
-  });
-
-  const createMutation = useMutation({
-    mutationFn: createNote,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      setIsModalOpen(false);
-      setPage(1);
-    },
-  });
-
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
-  };
 
   const debouncedSearch = useDebouncedCallback((value: string) => {
     setSearch(value);
@@ -72,25 +45,23 @@ export default function App() {
             onPageChange={setPage}
           />
         )}
+
         <button className={css.button} onClick={() => setIsModalOpen(true)}>
           Create note +
         </button>
       </header>
+
       {isModalOpen && (
         <Modal onClose={() => setIsModalOpen(false)}>
-          <NoteForm
-            onCancel={() => setIsModalOpen(false)}
-            onSubmit={(values) => createMutation.mutate(values)}
-          />
+          <NoteForm onCancel={() => setIsModalOpen(false)} />
         </Modal>
       )}
 
       {isLoading && <p>Loading...</p>}
+
       {error && <p>Something went wrong!</p>}
 
-      {!isLoading && !error && notes.length > 0 && (
-        <NoteList notes={notes} onDelete={handleDelete} />
-      )}
+      {!isLoading && !error && notes.length > 0 && <NoteList notes={notes} />}
 
       {!isLoading && !error && notes.length === 0 && <p>No notes found</p>}
 
